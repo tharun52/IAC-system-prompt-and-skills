@@ -1,0 +1,87 @@
+# Place this file at: .github/workflows/terraform.yml
+# This is a single generic pipeline shared across all Terraform projects.
+# Triggered manually only — no automatic runs on push or PR.
+
+name: Terraform
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_path:
+        description: 'Project folder to target (e.g., vpc-ec2)'
+        required: true
+        type: string
+      action:
+        description: 'Action to perform'
+        required: true
+        type: choice
+        options:
+          - apply
+          - destroy
+        default: apply
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: terraform-${{ github.event.inputs.project_path }}
+  cancel-in-progress: false
+
+jobs:
+
+  # -------------------------------------------------------
+  # Apply / Destroy (manual trigger only)
+  # -------------------------------------------------------
+  run:
+    runs-on: ubuntu-latest
+    environment: Aws_runner
+    defaults:
+      run:
+        working-directory: ${{ github.event.inputs.project_path }}
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: latest
+
+      - name: Cache Terraform plugins
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.event.inputs.project_path }}/.terraform
+          key: terraform-${{ github.event.inputs.project_path }}-${{ hashFiles(format('{0}/.terraform.lock.hcl', github.event.inputs.project_path)) }}
+          restore-keys: terraform-${{ github.event.inputs.project_path }}-
+
+      - name: Terraform Format
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -var-file=terraform.tfvars -out=tfplan
+
+      - name: Terraform Apply
+        if: github.event.inputs.action == 'apply'
+        run: terraform apply tfplan
+
+      - name: Terraform Destroy
+        if: github.event.inputs.action == 'destroy'
+        run: terraform destroy -var-file=terraform.tfvars -auto-approve
+
+      - name: Upload Plan
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ github.event.inputs.project_path }}-${{ github.run_id }}
+          path: ${{ github.event.inputs.project_path }}/tfplan
+          retention-days: 30
