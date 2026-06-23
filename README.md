@@ -12,8 +12,8 @@ One Claude agent handles the full lifecycle: gather requirements, write Terrafor
 
 | File | Purpose |
 |------|---------|
-| `single-agent/iacagent.md` | System prompt — paste this as the agent's system prompt |
-| `single-agent/mcps.md` | MCP servers to attach: GitHub, Terraform |
+| [single-agent/iacagent.md](single-agent/iacagent.md) | System prompt — paste this as the agent's system prompt |
+| [single-agent/mcps.md](single-agent/mcps.md) | MCP servers to attach: GitHub, Terraform |
 
 ### Skills
 
@@ -21,10 +21,10 @@ Attach these as skills in Claude:
 
 | File | Triggered when |
 |------|---------------|
-| `single-agent/skills/analyze-requirement.md` | User describes what to build — checks repo state, proposes an architecture plan with folder structure |
-| `single-agent/skills/write-terraform-code.md` | Plan is approved — generates Terraform code, commits to a branch, raises a PR |
-| `single-agent/skills/pipeline-context.md` | Agent needs to understand the pipeline structure before guiding the user |
-| `single-agent/skills/pipeline-monitor.md` | Pipeline has run — agent checks results and fixes failures |
+| [single-agent/skills/analyze-requirement.md](single-agent/skills/analyze-requirement.md) | User describes what to build — checks repo state, proposes an architecture plan with folder structure |
+| [single-agent/skills/write-terraform-code.md](single-agent/skills/write-terraform-code.md) | Plan is approved — generates Terraform code, commits to a branch, raises a PR |
+| [single-agent/skills/pipeline-context.md](single-agent/skills/pipeline-context.md) | Agent needs to understand the pipeline structure before guiding the user |
+| [single-agent/skills/pipeline-monitor.md](single-agent/skills/pipeline-monitor.md) | Pipeline has run — agent checks results and fixes failures |
 
 ---
 
@@ -42,10 +42,10 @@ User ↔ Orchestrator → Validation Agent   (plan)
 
 | File | Role | MCPs needed |
 |------|------|-------------|
-| `multiagent/orchestrator.md` | System prompt for the orchestrator | None |
-| `multiagent/validation-agent.md` | System prompt for the Validation Agent | GitHub, AWS |
-| `multiagent/iac-agent.md` | System prompt for the IAC Agent | GitHub, Terraform |
-| `multiagent/resource-agent.md` | System prompt for the Resource Agent | AWS |
+| [multiagent/orchestrator.md](multiagent/orchestrator.md) | System prompt for the orchestrator | None |
+| [multiagent/validation-agent.md](multiagent/validation-agent.md) | System prompt for the Validation Agent | GitHub, AWS |
+| [multiagent/iac-agent.md](multiagent/iac-agent.md) | System prompt for the IAC Agent | GitHub, Terraform |
+| [multiagent/resource-agent.md](multiagent/resource-agent.md) | System prompt for the Resource Agent | AWS |
 
 ### Skills
 
@@ -53,11 +53,11 @@ Attach these to the relevant subagent:
 
 | File | Agent | Purpose |
 |------|-------|---------|
-| `multiagent/skills/ma-validate-requirement.md` | Validation | Check repo + AWS state, return architecture plan |
-| `multiagent/skills/ma-revise-plan.md` | Validation | Update an existing plan based on user-requested changes |
-| `multiagent/skills/ma-write-terraform-code.md` | IAC | Generate Terraform code from approved plan, commit, raise PR |
-| `multiagent/skills/ma-fix-pipeline.md` | IAC | Fetch pipeline logs, diagnose failure, fix the file, update PR |
-| `multiagent/skills/ma-verify-resources.md` | Resource | Verify each planned resource exists and is healthy in AWS |
+| [multiagent/skills/ma-validate-requirement.md](multiagent/skills/ma-validate-requirement.md) | Validation | Check repo + AWS state, return architecture plan |
+| [multiagent/skills/ma-revise-plan.md](multiagent/skills/ma-revise-plan.md) | Validation | Update an existing plan based on user-requested changes |
+| [multiagent/skills/ma-write-terraform-code.md](multiagent/skills/ma-write-terraform-code.md) | IAC | Generate Terraform code from approved plan, commit, raise PR |
+| [multiagent/skills/ma-fix-pipeline.md](multiagent/skills/ma-fix-pipeline.md) | IAC | Fetch pipeline logs, diagnose failure, fix the file, update PR |
+| [multiagent/skills/ma-verify-resources.md](multiagent/skills/ma-verify-resources.md) | Resource | Verify each planned resource exists and is healthy in AWS |
 
 ---
 
@@ -67,9 +67,9 @@ Copy these GitHub Actions workflows into your repo's `.github/workflows/` folder
 
 | File | Trigger | What it does |
 |------|---------|-------------|
-| `pipelines/feature.yml` | Push to any non-main branch | fmt → validate + checkov (parallel) → plan |
-| `pipelines/merge.yml` | PR merged to main | plan → apply (single job, atomic) |
-| `pipelines/manual.yml` | Manual dispatch | plan / apply / destroy (select at runtime) |
+| [pipelines/feature.yml](pipelines/feature.yml) | Push to any non-main branch | fmt → validate + checkov (parallel) → plan |
+| [pipelines/merge.yml](pipelines/merge.yml) | PR merged to main | plan → apply (single job, atomic) |
+| [pipelines/manual.yml](pipelines/manual.yml) | Manual dispatch | plan / apply / destroy (select at runtime) |
 
 ### Requirements
 
