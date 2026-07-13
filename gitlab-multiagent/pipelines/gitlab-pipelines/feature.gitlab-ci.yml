@@ -1,0 +1,91 @@
+# Branch pipeline — triggers on MR open/update (terraform/** changes)
+# Flow: fmt → init → validate + checkov (parallel) → plan
+# Auth: runner uses IAM instance role — no credential variables needed
+
+terraform_fmt:
+  stage: format
+  image:
+    name: hashicorp/terraform:latest
+    entrypoint: [""]
+  tags:
+    - terraform-runner
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - terraform/**
+  script:
+    - cd terraform && terraform fmt -check -recursive -diff
+
+terraform_init:
+  stage: security
+  image:
+    name: hashicorp/terraform:latest
+    entrypoint: [""]
+  tags:
+    - terraform-runner
+  needs: [terraform_fmt]
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - terraform/**
+  script:
+    - cd terraform && terraform init -input=false
+  artifacts:
+    paths:
+      - terraform/.terraform/
+      - terraform/.terraform.lock.hcl
+    expire_in: 1 hour
+
+terraform_validate:
+  stage: validate
+  image:
+    name: hashicorp/terraform:latest
+    entrypoint: [""]
+  tags:
+    - terraform-runner
+  needs: [terraform_init]
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - terraform/**
+  script:
+    - cd terraform && terraform validate
+
+checkov_scan:
+  stage: validate
+  image: python:3.12-slim
+  tags:
+    - terraform-runner
+  needs: [terraform_init]
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - terraform/**
+  cache:
+    key: checkov-pip
+    paths:
+      - .pip-cache/
+  script:
+    - pip install checkov --quiet --cache-dir .pip-cache
+    - cd terraform
+    - checkov --directory . --framework terraform --output cli --output junitxml --output-file-path . --soft-fail
+  artifacts:
+    when: always
+    paths:
+      - terraform/results_junitxml.xml
+    expire_in: 7 days
+
+terraform_plan:
+  stage: plan
+  image:
+    name: hashicorp/terraform:latest
+    entrypoint: [""]
+  tags:
+    - terraform-runner
+  needs: [terraform_init, terraform_validate, checkov_scan]
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - terraform/**
+  script:
+    - cd terraform && terraform plan -var-file=terraform.tfvars

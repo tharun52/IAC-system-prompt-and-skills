@@ -1,0 +1,10 @@
+stages:
+  - format
+  - security
+  - validate
+  - plan
+  - apply
+
+include:
+  - local: 'pipelines/feature.gitlab-ci.yml'
+  - local: 'pipelines/merge.gitlab-ci.yml'

@@ -1,0 +1,40 @@
+# Main pipeline — triggers on push to main after MR merge (terraform/** changes)
+# Flow: plan → apply
+# Auth: runner uses IAM instance role — no credential variables needed
+
+terraform_plan_main:
+  stage: plan
+  image:
+    name: hashicorp/terraform:latest
+    entrypoint: [""]
+  tags:
+    - terraform-runner
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      changes:
+        - terraform/**
+  script:
+    - cd terraform
+    - terraform init -input=false
+    - terraform plan -var-file=terraform.tfvars -out=tfplan
+  artifacts:
+    paths:
+      - terraform/.terraform/
+      - terraform/.terraform.lock.hcl
+      - terraform/tfplan
+    expire_in: 1 hour
+
+terraform_apply_main:
+  stage: apply
+  image:
+    name: hashicorp/terraform:latest
+    entrypoint: [""]
+  tags:
+    - terraform-runner
+  needs: [terraform_plan_main]
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      changes:
+        - terraform/**
+  script:
+    - cd terraform && terraform apply -input=false tfplan
