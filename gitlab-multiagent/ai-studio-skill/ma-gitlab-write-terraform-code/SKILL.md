@@ -1,6 +1,7 @@
-ma-gitlab-write-terraform-code
-
-Generate production-ready Terraform code from the approved plan provided by the orchestrator and commit it to GitLab.
+---
+name: ma-gitlab-write-terraform-code
+description: "Generate production-ready Terraform code from the approved plan provided by the orchestrator and commit it to GitLab."
+---
 
 ## Workflow
 
