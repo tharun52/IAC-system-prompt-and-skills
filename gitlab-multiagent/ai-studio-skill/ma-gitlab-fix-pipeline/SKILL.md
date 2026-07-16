@@ -39,16 +39,31 @@ Identify the root cause by failed job:
 
 If the failure is an **IAM permission error** — escalate to the orchestrator, do not attempt a fix.
 
-### Step 3 — Read the Terraform File
+### Step 3 — Diagnose Which Files Need Fixing
 
-Use `get_file_contents` with `ref: terraform/{project_name}` to read the specific Terraform file the error points to.
+From the error output, identify every file that needs a change. Do not read files first — `edit_files` fetches them internally.
 
 ### Step 4 — Fix the Terraform Code
 
-Fix only the Terraform code that caused the error. Do not change anything else.
+Use `edit_files` to apply all fixes in a single commit. Pass only the exact search and replace strings — never the full file content. All files are committed atomically.
 
-- **Single file** → use `create_or_update_file`
-- **Multiple existing files** → use `create_or_update_file` one file at a time, sequentially — never in parallel. Each call changes the branch HEAD SHA; the next call must use the updated SHA or it will fail.
+```json
+{
+  "project_id": "{gitlab_project_path}",
+  "branch": "terraform/{project_name}",
+  "commit_message": "fix: {root cause summary}",
+  "files": [
+    {
+      "file_path": "terraform/networking/main.tf",
+      "changes": [
+        { "search": "<exact broken string>", "replace": "<fixed string>" }
+      ]
+    }
+  ]
+}
+```
+
+Fix only the Terraform code that caused the error. Do not change anything else.
 
 Common fixes:
 

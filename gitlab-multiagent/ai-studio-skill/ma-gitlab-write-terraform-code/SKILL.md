@@ -130,35 +130,16 @@ Generate `env/{environment}.tfvars` with actual values and copy into `terraform/
 - Follow least-privilege IAM
 - Document all variables and outputs
 
-### Step 9 — Format Before Committing
+### Step 9 — Write Correctly Formatted Code
 
-The MR pipeline runs these checks automatically — you do not touch pipeline files, only ensure your Terraform code passes them:
-- `terraform fmt -check -recursive` — blocks if any file is not formatted
-- `terraform init` + `terraform validate` — blocks on invalid config
-- `checkov` scan — soft-fail, does not block
-- `terraform plan` — shows what will be created
+Write every `.tf` and `.tfvars` file with correct formatting from the start. The pipeline will catch any fmt errors and `ma-gitlab-fix-pipeline` will fix them — do not attempt local checks or code execution.
 
-Apply these formatting rules to every `.tf` and `.tfvars` file so fmt passes:
-
+Rules to follow:
 - 2-space indentation, no tabs
 - Aligned `=` signs within each block
 - One blank line between top-level blocks, no blank line after opening `{`
 - No trailing whitespace
-- No inline comments after values (they break alignment)
-
-```hcl
-# correct
-resource "aws_s3_bucket" "this" {
-  bucket      = var.bucket_name
-  environment = var.environment
-}
-
-# wrong — tab indent and misaligned = signs
-resource "aws_s3_bucket" "this" {
-	bucket = var.bucket_name
-	environment = var.environment
-}
-```
+- No inline comments after values
 
 ### Step 10 — Commit and Raise MR
 
@@ -168,7 +149,7 @@ Use the GitLab MCP:
 
    **Which tool to use:**
    - `push_files` — new files only (branch was just created, files do not exist yet). Split into batches per subfolder group to reduce payload: one call for root `terraform/` files, one for `networking/`, one for `compute/`, etc.
-   - `create_or_update_file` — existing files only (branch already has files). Call **one file at a time, sequentially** — never in parallel. Each call changes the branch HEAD SHA; the next call must use the new SHA or it will fail.
+   - `edit_files` — existing files only (branch already has files). Pass only the search + replace strings for each file — never the full file content. All files are committed atomically in one call, no SHA management needed.
 
 3. Raise an MR to main using `create_merge_request` with a proper markdown description (real line breaks, not `\n`)
 
