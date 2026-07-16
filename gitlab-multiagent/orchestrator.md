@@ -26,25 +26,77 @@ If the fix requires a missing AWS permission, escalate to the user — do not at
 
 ---
 
+## Inter-Agent Message Format
+
+Always use the compact format below — never prose paragraphs. Static config goes on one line; requirements as short bullets.
+
+**Validation Agent — new request:**
+```
+SKILL: ma-gitlab-validate-requirement
+PROJECT: {name} | ENV: {env} | REGION: {region}
+GITLAB_ID: {id} | STATE_BUCKET: {bucket} | ROLE: {account_id}/{role_name}
+
+REQUEST:
+- VPC: {new or existing, subnets, AZs}
+- {resource}: {key facts only — type, size, key config}
+- {resource}: ...
+```
+
+**Validation Agent — plan change:**
+```
+SKILL: ma-gitlab-revise-plan
+PROJECT: {name} | ENV: {env} | REGION: {region}
+GITLAB_ID: {id} | STATE_BUCKET: {bucket} | ROLE: {account_id}/{role_name}
+
+CHANGES: {what the user wants added/removed/modified}
+
+EXISTING PLAN:
+{paste the plan returned by the previous validation call}
+```
+
+**IAC Agent — write code:**
+```
+SKILL: ma-gitlab-write-terraform-code
+GITLAB_ID: {id} | STATE_BUCKET: {bucket} | ROLE: {account_id}/{role_name}
+
+APPROVED PLAN:
+{paste the plan exactly as returned by the Validation Agent}
+```
+
+**IAC Agent — fix pipeline:**
+```
+SKILL: ma-gitlab-fix-pipeline
+GITLAB_ID: {id} | BRANCH: terraform/{project_name}
+```
+
+**Resource Agent — verify:**
+```
+SKILL: ma-gitlab-verify-resources
+REGION: {region}
+
+EXPECTED RESOURCES:
+{paste resource list from the approved plan}
+```
+
+---
+
 ## Subagent Instructions
 
 ### → Validation Agent
 
-For new requests, gather in one message before sending: project name, environment, region, sizing/networking preferences, GitLab project path and S3 state bucket (if not in your system prompt).
+For new requests, collect project name, environment, region, and sizing/networking before sending. Use the compact format above.
 
-For change or removal requests, send immediately — the Validation Agent will check the repo and AWS and return what is missing.
+For change requests, send immediately using `ma-gitlab-revise-plan` — include the full existing plan and exact changes.
 
-Present the plan to the user and ask for approval. For plan changes, resend with the `ma-gitlab-revise-plan` skill — include the full existing plan and the exact changes.
+Present the plan to the user and ask for approval before proceeding.
 
 ### → IAC Agent
 
-Send the full approved plan (project path, state bucket included). Ask it to generate code, commit to `terraform/{project_name}` branch, and raise an MR to main.
-
-For pipeline failures, send with the `ma-gitlab-fix-pipeline` skill — include project path and branch.
+After plan approval, send using `ma-gitlab-write-terraform-code` with the compact format above. For pipeline failures, use `ma-gitlab-fix-pipeline`.
 
 ### → Resource Agent
 
-Send the AWS region and full resource list from the approved plan. Relay the verification report to the user. If anything is missing or unexpected, ask the user how to proceed — do not attempt a fix.
+After a successful merge pipeline, send using `ma-gitlab-verify-resources`. Relay the report to the user. If anything is missing or unexpected, ask the user how to proceed — do not attempt a fix.
 
 ---
 
