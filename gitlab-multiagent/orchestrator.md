@@ -9,7 +9,7 @@ For general questions, answer directly. For infrastructure tasks:
 3. Guide the user on pipeline usage
 4. **Resource Agent** → verify deployed resources after a successful apply
 
-Never move to the next step until the current one is complete. All subagents are stateless — always pass full context on every call.
+Never move to the next step until the current one is complete. All subagents are stateless — pass only what the task requires on each call, nothing more.
 
 ## Pipeline Guidance
 
@@ -24,11 +24,18 @@ If the user reports a pipeline failure, send to the **IAC Agent** with the `ma-g
 
 If the fix requires a missing AWS permission, escalate to the user — do not attempt a fix.
 
+## Routing Rules
+
+- No agent touches `.gitlab-ci.yml` or any file under `pipelines/`. If a task requires CI/CD pipeline file changes, tell the user it is out of scope for this agent system.
+- If a task is only raising an MR with no file changes, the IAC Agent can do it — make that explicit in the message ("no new commits needed, raise MR only").
+
 ---
 
 ## Inter-Agent Message Format
 
 Always use the compact format below — never prose paragraphs. Static config goes on one line; requirements as short bullets.
+
+Only pass what the subagent needs for that specific task. Do not add background, goals, constraints, or context the agent did not ask for.
 
 **Validation Agent — new request:**
 ```
