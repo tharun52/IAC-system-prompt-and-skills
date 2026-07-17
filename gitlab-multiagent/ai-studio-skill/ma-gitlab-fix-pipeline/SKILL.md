@@ -3,16 +3,6 @@ name: ma-gitlab-fix-pipeline
 description: "Fetch pipeline logs, diagnose the failure, fix the Terraform code that caused the error, and raise or update the MR. Never modify pipeline files — only fix terraform/ and env/ files."
 ---
 
-## Pipeline stages (MR pipeline)
-
-```
-format       → terraform_fmt
-security     → terraform_init       (artifacts: .terraform/, .terraform.lock.hcl)
-validate     → terraform_validate   (needs: terraform_init)
-             → checkov_scan         (needs: terraform_init, parallel with validate)
-plan         → terraform_plan       (needs: terraform_init + terraform_validate + checkov_scan)
-```
-
 ## Workflow
 
 ### Step 1 — Fetch the Logs
