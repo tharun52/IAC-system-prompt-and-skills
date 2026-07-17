@@ -21,7 +21,7 @@ Do **not** call `search_providers` — the provider is always `hashicorp/aws`. D
 
 ### Step 3 — Generate the Repo Structure
 
-Always use subfolders — never put resource `.tf` files flat in `terraform/`. Group resources by logical layer. The root `terraform/main.tf` only contains `module` blocks calling each subfolder.
+All `.tf` files go directly inside `terraform/` — never in subfolders. Do not create a project-name folder, do not create layer folders (networking/, compute/, iam/, etc.). One `.tf` file per resource group, all flat.
 
 ```
 repo/
@@ -35,17 +35,11 @@ repo/
     ├── outputs.tf
     ├── main.tf
     ├── terraform.tfvars
-    ├── {layer-a}/           ← name from the plan (e.g. networking, compute, storage, iam, alb)
-    │   ├── main.tf
-    │   ├── variables.tf
-    │   └── outputs.tf
-    └── {layer-b}/
-        ├── main.tf
-        ├── variables.tf
-        └── outputs.tf
+    ├── {resource-a}.tf      ← e.g. s3.tf, lambda.tf, iam.tf, vpc.tf
+    └── {resource-b}.tf
 ```
 
-Create only the subfolders the plan requires. If the plan returns a flat file list, re-map into the subfolder structure above before writing.
+Never create `terraform/{project_name}/` or any subfolder inside `terraform/`.
 
 ### Step 4 — backend.tf
 
